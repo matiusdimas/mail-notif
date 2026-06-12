@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MailPulse-WA Dashboard</title>
+    <script>
+        // Fix Traefik sub-path routing and relative assets
+        const bp = window.location.pathname.includes('/mail-wa') ? '/mail-wa/' : '/';
+        document.write('<base href="' + bp + '">');
+        document.write('<script src="' + bp + 'socket.io/socket.io.js"><\\/script>');
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script>
-        // Load socket.io with correct base path
-        const basePath = window.location.pathname.includes('/mail-wa') ? '/mail-wa' : '';
-        document.write('<script src="' + basePath + '/socket.io/socket.io.js"><\\/script>');
-    </script>
 </head>
 <body>
     <div class="app-container">
