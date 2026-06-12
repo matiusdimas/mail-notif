@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailPulse-WA Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // Load socket.io with correct base path
+        const basePath = window.location.pathname.includes('/mail-wa') ? '/mail-wa' : '';
+        document.write('<script src="' + basePath + '/socket.io/socket.io.js"><\\/script>');
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar / Header -->
+        <header class="header glass-panel">
+            <div class="logo">
+                <span class="icon">📬</span>
+                <h1>MailPulse WA</h1>
+            </div>
+            <p class="subtitle">Smart Email Filter & Notifier</p>
+            <div class="voice-status">
+                <button id="enable-voice-btn" class="btn primary-btn">Enable Voice Notifications</button>
+                <p id="voice-status-text" class="status-text warning">⚠️ Voice Auto-play requires interaction</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Event Log Section -->
+            <section class="section glass-panel">
+                <div class="section-header">
+                    <h2>Live Email Logs</h2>
+                    <span class="live-indicator"></span>
+                </div>
+                <div class="log-container" id="log-container">
+                    <p class="empty-log">Waiting for incoming emails...</p>
+                </div>
+            </section>
+
+            <!-- Filters Management Section -->
+            <section class="section glass-panel">
+                <div class="section-header">
+                    <h2>Filter Rules</h2>
+                    <button id="add-filter-btn" class="btn action-btn">+ Add Rule</button>
+                </div>
+                
+                <div class="filters-container" id="filters-container">
+                    <!-- Filters will be injected here via JS -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for WhatsApp QR -->
+    <div class="modal-overlay" id="qr-modal">
+        <div class="modal glass-panel" style="text-align: center;">
+            <h2>WhatsApp Login</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Scan this QR Code using your WhatsApp app to link your account.</p>
+            <div id="qr-container" style="background: white; padding: 1rem; border-radius: 12px; display: inline-block;">
+                <img id="qr-image" src="" alt="WhatsApp QR Code" style="width: 250px; height: 250px; display: none;">
+                <div id="qr-loading" style="color: black; padding: 3rem;">Waiting for QR...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding/Editing Filter -->
+    <div class="modal-overlay" id="filter-modal">
+        <div class="modal glass-panel">
+            <h2 id="modal-title">Add New Rule</h2>
+            <form id="filter-form">
+                <input type="hidden" id="filter-id">
+                
+                <div class="form-group">
+                    <label>Rule Name</label>
+                    <input type="text" id="filter-name" placeholder="e.g., Boss Emails" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Sender Contains</label>
+                    <input type="text" id="filter-sender" placeholder="e.g., boss@company.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Subject Contains</label>
+                    <input type="text" id="filter-subject" placeholder="e.g., URGENT">
+                </div>
+
+                <div class="form-group">
+                    <label>Body Contains</label>
+                    <input type="text" id="filter-body" placeholder="e.g., Action Required">
+                </div>
+
+                <div class="form-group row">
+                    <label>Active</label>
+                    <label class="switch">
+                        <input type="checkbox" id="filter-active" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancel-btn" class="btn outline-btn">Cancel</button>
+                    <button type="submit" class="btn primary-btn">Save Rule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
