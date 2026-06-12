@@ -17,6 +17,10 @@ const client = new Client({
 let isReady = false;
 let latestQR = null;
 
+client.on('loading_screen', (percent, message) => {
+    console.log('WhatsApp Loading Screen:', percent, '%', message);
+});
+
 client.on('qr', (qr) => {
     console.log('QR Code received, scan please:');
     qrcode.generate(qr, { small: true });
