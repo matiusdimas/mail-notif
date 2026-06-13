@@ -23,7 +23,8 @@ services:
       - "traefik.http.middlewares.mailwa-strip.stripprefix.prefixes=/mail-wa"
       # BasicAuth — scoped to THIS router only; does not affect other Traefik projects.
       # Credentials live in .env (gitignored) as MAILWA_AUTH_USERS=user:apr1hash
-      # Generate the hash with: openssl passwd -apr1 'yourpass'  (paste output verbatim into .env)
+      # Generate: openssl passwd -apr1 'yourpass'  -> prefix with "user:" and DOUBLE every $ to $$
+      # e.g.  MAILWA_AUTH_USERS=admin:$$apr1$$abc$$def   (verify with: docker compose config)
       - "traefik.http.middlewares.mailwa-auth.basicauth.users=${MAILWA_AUTH_USERS}"
       - "traefik.http.routers.mail-wa.middlewares=mailwa-strip,mailwa-auth"
       - "traefik.http.services.mail-wa.loadbalancer.server.port=3000"
