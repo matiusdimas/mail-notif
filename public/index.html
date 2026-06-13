@@ -24,14 +24,21 @@
                 <h1>MailPulse</h1>
             </div>
             <p class="subtitle">Smart Email Filter & Notifier</p>
-            <div class="voice-status">
-                <button id="enable-voice-btn" class="btn primary-btn">Enable Voice Notifications</button>
-                <div class="voice-picker">
-                    <label for="voice-select">Suara</label>
-                    <select id="voice-select"></select>
-                    <button id="test-voice-btn" class="btn outline-btn" type="button">▶ Tes Suara</button>
+            <div class="notification-settings">
+                <div class="settings-group" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+                    <button id="enable-system-btn" class="btn primary-btn">Enable Windows Notifications</button>
+                    <p id="system-status-text" class="status-text warning">⚠️ Windows Notifications disabled</p>
                 </div>
-                <p id="voice-status-text" class="status-text warning">⚠️ Voice Auto-play requires interaction</p>
+                
+                <div class="settings-group" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+                    <button id="enable-voice-btn" class="btn primary-btn">Enable Voice Notifications</button>
+                    <div class="voice-picker">
+                        <label for="voice-select">Suara</label>
+                        <select id="voice-select"></select>
+                        <button id="test-voice-btn" class="btn outline-btn" type="button">▶ Tes Suara</button>
+                    </div>
+                    <p id="voice-status-text" class="status-text warning">⚠️ Voice Auto-play requires interaction</p>
+                </div>
             </div>
         </header>
 

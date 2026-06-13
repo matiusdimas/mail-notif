@@ -76,10 +76,8 @@ body {
     font-size: 0.9rem;
 }
 
-.voice-status {
+.notification-settings {
     margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--glass-border);
 }
 
 .voice-picker {

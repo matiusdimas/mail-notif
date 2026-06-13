@@ -16,7 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const voiceSelect = document.getElementById('voice-select');
     const testVoiceBtn = document.getElementById('test-voice-btn');
 
+    const enableSystemBtn = document.getElementById('enable-system-btn');
+    const systemStatusText = document.getElementById('system-status-text');
+
     let isVoiceEnabled = false;
+    let isSystemEnabled = false;
+    const SYSTEM_STORAGE_KEY = 'mailpulse_system_notif';
 
     // --- VOICE PICKER (TTS) ---
     const VOICE_STORAGE_KEY = 'mailpulse_voice';
@@ -111,6 +116,82 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- SYSTEM (WINDOWS) NOTIFICATIONS ---
+    function updateSystemUI() {
+        if (isSystemEnabled && 'Notification' in window && Notification.permission === 'granted') {
+            enableSystemBtn.textContent = 'System Notifications Enabled';
+            enableSystemBtn.classList.replace('primary-btn', 'outline-btn');
+            enableSystemBtn.style.color = 'var(--accent-color)';
+            enableSystemBtn.style.borderColor = 'var(--accent-color)';
+
+            systemStatusText.textContent = '🔔 Windows Notifications active';
+            systemStatusText.className = 'status-text success';
+        } else {
+            enableSystemBtn.textContent = 'Enable Windows Notifications';
+            enableSystemBtn.classList.replace('outline-btn', 'primary-btn');
+            enableSystemBtn.style.color = '';
+            enableSystemBtn.style.borderColor = '';
+
+            if (!('Notification' in window)) {
+                systemStatusText.textContent = '❌ Browser does not support Notifications';
+                systemStatusText.className = 'status-text danger';
+            } else if (Notification.permission === 'denied') {
+                systemStatusText.textContent = '❌ Notifications blocked by browser';
+                systemStatusText.className = 'status-text danger';
+            } else {
+                systemStatusText.textContent = '⚠️ Windows Notifications disabled';
+                systemStatusText.className = 'status-text warning';
+            }
+        }
+    }
+
+    // Check saved settings on load
+    const savedSystemSetting = localStorage.getItem(SYSTEM_STORAGE_KEY);
+    if (savedSystemSetting === 'true' && 'Notification' in window && Notification.permission === 'granted') {
+        isSystemEnabled = true;
+    }
+    updateSystemUI();
+
+    enableSystemBtn.addEventListener('click', async () => {
+        if (!('Notification' in window)) {
+            alert('Browser Anda tidak mendukung notifikasi sistem.');
+            return;
+        }
+
+        if (isSystemEnabled) {
+            isSystemEnabled = false;
+            localStorage.setItem(SYSTEM_STORAGE_KEY, 'false');
+            updateSystemUI();
+        } else {
+            if (Notification.permission === 'granted') {
+                isSystemEnabled = true;
+                localStorage.setItem(SYSTEM_STORAGE_KEY, 'true');
+                updateSystemUI();
+                
+                new Notification('MailPulse', {
+                    body: 'Notifikasi sistem telah diaktifkan!',
+                    icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📬</text></svg>'
+                });
+            } else if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    isSystemEnabled = true;
+                    localStorage.setItem(SYSTEM_STORAGE_KEY, 'true');
+                    updateSystemUI();
+                    
+                    new Notification('MailPulse', {
+                        body: 'Notifikasi sistem telah diaktifkan!',
+                        icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📬</text></svg>'
+                    });
+                } else {
+                    updateSystemUI();
+                }
+            } else {
+                alert('Izin notifikasi diblokir oleh browser. Silakan aktifkan izin notifikasi di pengaturan browser Anda.');
+            }
+        }
+    });
+
     // --- INCOMING EMAIL LOGIC ---
 
     socket.on('new_email', (data) => {
@@ -118,6 +199,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Log to UI
         addLogItem(type, sender, subject);
+
+        let typeText = 'Email Baru';
+        if (type === 'reply') typeText = 'Balasan Email';
+        if (type === 'forward') typeText = 'Terusan Email';
+
+        // Trigger Windows System Notification
+        if (isSystemEnabled && 'Notification' in window && Notification.permission === 'granted') {
+            const notif = new Notification(`MailPulse: ${typeText}`, {
+                body: `Dari: ${sender}\nSubjek: ${subject || '(Tidak ada subjek)'}`,
+                icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📬</text></svg>',
+                requireInteraction: false
+            });
+            notif.onclick = () => {
+                window.focus();
+            };
+        }
 
         // Play voice
         if (isVoiceEnabled) {
