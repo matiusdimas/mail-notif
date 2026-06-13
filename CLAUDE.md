@@ -66,8 +66,10 @@ There are **no tests** (`npm test` is a placeholder) and no linter configured.
 - Telegram sending uses the global `fetch` (Node 18+); there is no `node-telegram-bot-api`
   dependency. Keep it that way unless inbound bot commands are needed.
 - Config via `.env` (dotenv): `GMAIL_USER`, `GMAIL_APP_PASSWORD` (Google App Password, not the
-  account password), `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (group chat IDs are negative),
-  `PORT`. index.js reads `WEB_PORT || PORT || 3000`.
+  account password), `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (group chat IDs are negative).
+  Web port: index.js reads `WEB_PORT || 3000` only. A legacy `PORT` var may exist in some
+  `.env` files (e.g. `PORT=993`) but is **ignored** — do not wire it to the web port, or it
+  collides with the IMAP port and breaks the Traefik route (502).
 - Telegram message uses `parse_mode: 'HTML'`. Any dynamic text injected into the message MUST
   be HTML-escaped (see `escapeHtml` in [src/formatter.js](src/formatter.js)) — sender strings
   contain `<...>` angle brackets that would otherwise break parsing.

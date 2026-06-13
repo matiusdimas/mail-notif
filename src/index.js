@@ -96,7 +96,9 @@ async function startApp() {
     console.log('Starting MailPulse...');
 
     // Start Web Server
-    const WEB_PORT = process.env.WEB_PORT || process.env.PORT || 3000;
+    // Web server always listens on 3000 inside the container (Traefik/compose map to it).
+    // Override only via WEB_PORT; note PORT in .env is unrelated (legacy/unused) and ignored.
+    const WEB_PORT = process.env.WEB_PORT || 3000;
     server.listen(WEB_PORT, () => {
         console.log(`Web UI is running on http://localhost:${WEB_PORT}`);
     });

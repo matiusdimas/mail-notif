@@ -67,7 +67,6 @@ cp .env.example .env
 ```
 
 ```env
-PORT=3000
 GMAIL_USER=email_anda@gmail.com
 GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx        # App Password (bukan password Gmail)
 TELEGRAM_BOT_TOKEN=123456789:ABCdef...         # token dari BotFather
