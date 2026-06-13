@@ -168,6 +168,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem(SYSTEM_STORAGE_KEY, 'true');
                 updateSystemUI();
                 
+                // Play a silent test to initialize SpeechSynthesis in user context
+                const testUtterance = new SpeechSynthesisUtterance('');
+                window.speechSynthesis.speak(testUtterance);
+
                 new Notification('MailPulse', {
                     body: 'Notifikasi sistem telah diaktifkan!',
                     icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📬</text></svg>'
@@ -179,6 +183,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem(SYSTEM_STORAGE_KEY, 'true');
                     updateSystemUI();
                     
+                    // Play a silent test to initialize SpeechSynthesis in user context
+                    const testUtterance = new SpeechSynthesisUtterance('');
+                    window.speechSynthesis.speak(testUtterance);
+
                     new Notification('MailPulse', {
                         body: 'Notifikasi sistem telah diaktifkan!',
                         icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📬</text></svg>'
@@ -217,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Play voice
-        if (isVoiceEnabled) {
+        if (isVoiceEnabled || isSystemEnabled) {
             let message = '';
             if (type === 'reply') {
                 message = `Email balasan dari ${sender} dengan subjek ${subject}`;
