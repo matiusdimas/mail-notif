@@ -13,16 +13,24 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
 function initDb() {
     db.serialize(() => {
-        db.run(`CREATE TABLE IF NOT EXISTS filters (
+        db.run(`DROP TABLE IF EXISTS filters`, (err) => {
+            if (err) console.error('Error dropping filters table', err.message);
+        });
+
+        db.run(`CREATE TABLE IF NOT EXISTS blacklists (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            sender_contains TEXT,
-            subject_contains TEXT,
-            body_contains TEXT,
+            email_to TEXT,
+            cc TEXT,
+            sender_name TEXT,
+            sender_email TEXT,
+            subject TEXT,
+            body TEXT,
+            email_type TEXT DEFAULT 'both',
             is_active INTEGER DEFAULT 1
         )`, (err) => {
             if (err) {
-                console.error('Error creating filters table', err.message);
+                console.error('Error creating blacklists table', err.message);
             } else {
                 seedData();
             }
@@ -31,33 +39,27 @@ function initDb() {
 }
 
 function seedData() {
-    db.get('SELECT COUNT(*) as count FROM filters', (err, row) => {
+    db.get('SELECT COUNT(*) as count FROM blacklists', (err, row) => {
         if (err) {
-            console.error('Error checking filters count', err.message);
+            console.error('Error checking blacklists count', err.message);
             return;
         }
 
         if (row.count === 0) {
-            const stmt = db.prepare(`INSERT INTO filters (name, sender_contains, subject_contains, body_contains, is_active) VALUES (?, ?, ?, ?, ?)`);
+            const stmt = db.prepare(`INSERT INTO blacklists (name, email_to, cc, sender_name, sender_email, subject, body, email_type, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
             
-            // Seed 1: URGENT emails
-            stmt.run('URGENT Notifications', '', 'URGENT', '', 1);
-            
-            // Seed 2: Boss's emails
-            stmt.run('Boss Emails', 'boss@company.com', '', '', 1);
-            
-            // Seed 3: Error alerts
-            stmt.run('System Errors', 'noreply@', 'Error', '', 1);
+            // Seed 1: Spam rule
+            stmt.run('Spam Emails', '', '', '', 'spam@spam.com', '', '', 'both', 1);
 
             stmt.finalize();
-            console.log('Seeded initial filter rules.');
+            console.log('Seeded initial blacklist rules.');
         }
     });
 }
 
 function getActiveFilters() {
     return new Promise((resolve, reject) => {
-        db.all('SELECT * FROM filters WHERE is_active = 1', (err, rows) => {
+        db.all('SELECT * FROM blacklists WHERE is_active = 1', (err, rows) => {
             if (err) {
                 reject(err);
             } else {
@@ -69,7 +71,7 @@ function getActiveFilters() {
 
 function getAllFilters() {
     return new Promise((resolve, reject) => {
-        db.all('SELECT * FROM filters ORDER BY id DESC', (err, rows) => {
+        db.all('SELECT * FROM blacklists ORDER BY id DESC', (err, rows) => {
             if (err) reject(err);
             else resolve(rows);
         });
@@ -78,9 +80,9 @@ function getAllFilters() {
 
 function addFilter(filter) {
     return new Promise((resolve, reject) => {
-        const { name, sender_contains, subject_contains, body_contains, is_active } = filter;
-        const stmt = db.prepare(`INSERT INTO filters (name, sender_contains, subject_contains, body_contains, is_active) VALUES (?, ?, ?, ?, ?)`);
-        stmt.run(name, sender_contains, subject_contains, body_contains, is_active === undefined ? 1 : is_active, function(err) {
+        const { name, email_to, cc, sender_name, sender_email, subject, body, email_type, is_active } = filter;
+        const stmt = db.prepare(`INSERT INTO blacklists (name, email_to, cc, sender_name, sender_email, subject, body, email_type, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        stmt.run(name, email_to, cc, sender_name, sender_email, subject, body, email_type || 'both', is_active === undefined ? 1 : is_active, function(err) {
             if (err) reject(err);
             else resolve(this.lastID);
         });
@@ -90,9 +92,9 @@ function addFilter(filter) {
 
 function updateFilter(id, filter) {
     return new Promise((resolve, reject) => {
-        const { name, sender_contains, subject_contains, body_contains, is_active } = filter;
-        const stmt = db.prepare(`UPDATE filters SET name = ?, sender_contains = ?, subject_contains = ?, body_contains = ?, is_active = ? WHERE id = ?`);
-        stmt.run(name, sender_contains, subject_contains, body_contains, is_active, id, function(err) {
+        const { name, email_to, cc, sender_name, sender_email, subject, body, email_type, is_active } = filter;
+        const stmt = db.prepare(`UPDATE blacklists SET name = ?, email_to = ?, cc = ?, sender_name = ?, sender_email = ?, subject = ?, body = ?, email_type = ?, is_active = ? WHERE id = ?`);
+        stmt.run(name, email_to, cc, sender_name, sender_email, subject, body, email_type || 'both', is_active, id, function(err) {
             if (err) reject(err);
             else resolve(this.changes);
         });
@@ -102,7 +104,7 @@ function updateFilter(id, filter) {
 
 function deleteFilter(id) {
     return new Promise((resolve, reject) => {
-        const stmt = db.prepare(`DELETE FROM filters WHERE id = ?`);
+        const stmt = db.prepare(`DELETE FROM blacklists WHERE id = ?`);
         stmt.run(id, function(err) {
             if (err) reject(err);
             else resolve(this.changes);

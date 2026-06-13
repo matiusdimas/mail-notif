@@ -106,6 +106,10 @@ const fetchNewEmails = async () => {
 
                 const emailData = {
                     sender: parsed.from?.text,
+                    senderName: parsed.from?.value?.[0]?.name || '',
+                    senderEmail: parsed.from?.value?.[0]?.address || '',
+                    to: parsed.to?.text || '',
+                    cc: parsed.cc?.text || '',
                     subject: parsed.subject,
                     date: parsed.date,
                     text: parsed.text,

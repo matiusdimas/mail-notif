@@ -87,18 +87,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- VOICE NOTIFICATIONS ---
     enableVoiceBtn.addEventListener('click', () => {
-        isVoiceEnabled = true;
-        enableVoiceBtn.textContent = 'Voice Enabled';
-        enableVoiceBtn.classList.replace('primary-btn', 'outline-btn');
-        enableVoiceBtn.style.color = 'var(--accent-color)';
-        enableVoiceBtn.style.borderColor = 'var(--accent-color)';
+        isVoiceEnabled = !isVoiceEnabled;
+        if (isVoiceEnabled) {
+            enableVoiceBtn.textContent = 'Voice Enabled';
+            enableVoiceBtn.classList.replace('primary-btn', 'outline-btn');
+            enableVoiceBtn.style.color = 'var(--accent-color)';
+            enableVoiceBtn.style.borderColor = 'var(--accent-color)';
 
-        voiceStatusText.textContent = '🔊 Voice notifications active';
-        voiceStatusText.className = 'status-text success';
+            voiceStatusText.textContent = '🔊 Voice notifications active';
+            voiceStatusText.className = 'status-text success';
 
-        // Play a silent test to initialize SpeechSynthesis in user context
-        const testUtterance = new SpeechSynthesisUtterance('');
-        window.speechSynthesis.speak(testUtterance);
+            // Play a silent test to initialize SpeechSynthesis in user context
+            const testUtterance = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(testUtterance);
+        } else {
+            enableVoiceBtn.textContent = 'Enable Voice Notifications';
+            enableVoiceBtn.classList.replace('outline-btn', 'primary-btn');
+            enableVoiceBtn.style.color = '';
+            enableVoiceBtn.style.borderColor = '';
+
+            voiceStatusText.textContent = '⚠️ Voice Auto-play requires interaction';
+            voiceStatusText.className = 'status-text warning';
+        }
     });
 
     // --- INCOMING EMAIL LOGIC ---
@@ -147,27 +157,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- FILTERS CRUD ---
+    // --- BLACKLISTS CRUD ---
     async function fetchFilters() {
         try {
-            const res = await fetch(BASE_PATH + '/api/filters');
+            const res = await fetch(BASE_PATH + '/api/blacklists');
             const filters = await res.json();
             renderFilters(filters);
         } catch (err) {
-            console.error('Failed to fetch filters', err);
+            console.error('Failed to fetch blacklists', err);
         }
     }
 
     function renderFilters(filters) {
         filtersContainer.innerHTML = '';
         if (filters.length === 0) {
-            filtersContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column:1/-1;">No filters configured. All emails will be ignored.</p>';
+            filtersContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column:1/-1;">No blacklists configured. All emails will be forwarded.</p>';
             return;
         }
 
         filters.forEach(filter => {
             const card = document.createElement('div');
             card.className = `filter-card ${filter.is_active ? '' : 'inactive'}`;
+            
+            let typeText = "Keduanya";
+            if (filter.email_type === "new") typeText = "Email Baru Saja";
+            if (filter.email_type === "reply") typeText = "Balasan/Terusan Saja";
+
             card.innerHTML = `
                 <div class="filter-header">
                     <h3>${filter.name}</h3>
@@ -177,16 +192,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
                 <div class="filter-detail">
-                    <div class="detail-label">Sender Contains</div>
-                    <div class="detail-value">${filter.sender_contains || '-'}</div>
+                    <div class="detail-label">Tipe Email</div>
+                    <div class="detail-value">${typeText}</div>
                 </div>
                 <div class="filter-detail" style="margin-top:0.5rem">
-                    <div class="detail-label">Subject Contains</div>
-                    <div class="detail-value">${filter.subject_contains || '-'}</div>
+                    <div class="detail-label">Email To</div>
+                    <div class="detail-value">${filter.email_to || '-'}</div>
                 </div>
                 <div class="filter-detail" style="margin-top:0.5rem">
-                    <div class="detail-label">Body Contains</div>
-                    <div class="detail-value">${filter.body_contains || '-'}</div>
+                    <div class="detail-label">CC</div>
+                    <div class="detail-value">${filter.cc || '-'}</div>
+                </div>
+                <div class="filter-detail" style="margin-top:0.5rem">
+                    <div class="detail-label">Nama Pengirim</div>
+                    <div class="detail-value">${filter.sender_name || '-'}</div>
+                </div>
+                <div class="filter-detail" style="margin-top:0.5rem">
+                    <div class="detail-label">Email Pengirim</div>
+                    <div class="detail-value">${filter.sender_email || '-'}</div>
+                </div>
+                <div class="filter-detail" style="margin-top:0.5rem">
+                    <div class="detail-label">Subject</div>
+                    <div class="detail-value">${filter.subject || '-'}</div>
+                </div>
+                <div class="filter-detail" style="margin-top:0.5rem">
+                    <div class="detail-label">Body</div>
+                    <div class="detail-value">${filter.body || '-'}</div>
                 </div>
             `;
             
@@ -201,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deleteFilter(id) {
         if (!confirm('Are you sure you want to delete this rule?')) return;
         try {
-            await fetch(BASE_PATH + `/api/filters/${id}`, { method: 'DELETE' });
+            await fetch(BASE_PATH + `/api/blacklists/${id}`, { method: 'DELETE' });
             fetchFilters();
         } catch (err) {
             console.error(err);
@@ -216,14 +247,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (filter) {
             document.getElementById('filter-id').value = filter.id;
             document.getElementById('filter-name').value = filter.name;
-            document.getElementById('filter-sender').value = filter.sender_contains || '';
-            document.getElementById('filter-subject').value = filter.subject_contains || '';
-            document.getElementById('filter-body').value = filter.body_contains || '';
+            document.getElementById('filter-type').value = filter.email_type || 'both';
+            document.getElementById('filter-to').value = filter.email_to || '';
+            document.getElementById('filter-cc').value = filter.cc || '';
+            document.getElementById('filter-sender-name').value = filter.sender_name || '';
+            document.getElementById('filter-sender-email').value = filter.sender_email || '';
+            document.getElementById('filter-subject').value = filter.subject || '';
+            document.getElementById('filter-body').value = filter.body || '';
             document.getElementById('filter-active').checked = filter.is_active === 1;
         } else {
             filterForm.reset();
             document.getElementById('filter-id').value = '';
             document.getElementById('filter-active').checked = true;
+            document.getElementById('filter-type').value = 'both';
         }
     }
 
@@ -240,23 +276,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = document.getElementById('filter-id').value;
         const payload = {
             name: document.getElementById('filter-name').value,
-            sender_contains: document.getElementById('filter-sender').value,
-            subject_contains: document.getElementById('filter-subject').value,
-            body_contains: document.getElementById('filter-body').value,
+            email_type: document.getElementById('filter-type').value,
+            email_to: document.getElementById('filter-to').value,
+            cc: document.getElementById('filter-cc').value,
+            sender_name: document.getElementById('filter-sender-name').value,
+            sender_email: document.getElementById('filter-sender-email').value,
+            subject: document.getElementById('filter-subject').value,
+            body: document.getElementById('filter-body').value,
             is_active: document.getElementById('filter-active').checked ? 1 : 0
         };
 
         try {
             if (id) {
                 // Update
-                await fetch(BASE_PATH + `/api/filters/${id}`, {
+                await fetch(BASE_PATH + `/api/blacklists/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
             } else {
                 // Create
-                await fetch(BASE_PATH + '/api/filters', {
+                await fetch(BASE_PATH + '/api/blacklists', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -265,8 +305,8 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
             fetchFilters();
         } catch (err) {
-            console.error('Error saving filter', err);
-            alert('Failed to save filter');
+            console.error('Error saving blacklist rule', err);
+            alert('Failed to save blacklist rule');
         }
     });
 

@@ -51,7 +51,7 @@
             <!-- Filters Management Section -->
             <section class="section glass-panel">
                 <div class="section-header">
-                    <h2>Filter Rules</h2>
+                    <h2>Blacklist Rules</h2>
                     <button id="add-filter-btn" class="btn action-btn">+ Add Rule</button>
                 </div>
                 
@@ -75,8 +75,32 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Sender Contains</label>
-                    <input type="text" id="filter-sender" placeholder="e.g., boss@company.com">
+                    <label>Email Type</label>
+                    <select id="filter-type" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white;">
+                        <option value="both">Keduanya</option>
+                        <option value="new">Email Baru Saja</option>
+                        <option value="reply">Balasan / Terusan Saja</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Email To (Penerima)</label>
+                    <input type="text" id="filter-to" placeholder="e.g., saya@company.com">
+                </div>
+
+                <div class="form-group">
+                    <label>CC</label>
+                    <input type="text" id="filter-cc" placeholder="e.g., cc@company.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Nama Pengirim</label>
+                    <input type="text" id="filter-sender-name" placeholder="e.g., John Doe">
+                </div>
+
+                <div class="form-group">
+                    <label>Email Pengirim</label>
+                    <input type="text" id="filter-sender-email" placeholder="e.g., boss@company.com">
                 </div>
 
                 <div class="form-group">

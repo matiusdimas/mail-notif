@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 // REST API Routes
-app.get('/api/filters', async (req, res) => {
+app.get('/api/blacklists', async (req, res) => {
     try {
         const filters = await db.getAllFilters();
         res.json(filters);
@@ -27,7 +27,7 @@ app.get('/api/filters', async (req, res) => {
     }
 });
 
-app.post('/api/filters', async (req, res) => {
+app.post('/api/blacklists', async (req, res) => {
     try {
         const id = await db.addFilter(req.body);
         res.json({ id });
@@ -36,7 +36,7 @@ app.post('/api/filters', async (req, res) => {
     }
 });
 
-app.put('/api/filters/:id', async (req, res) => {
+app.put('/api/blacklists/:id', async (req, res) => {
     try {
         const changes = await db.updateFilter(req.params.id, req.body);
         res.json({ changes });
@@ -45,7 +45,7 @@ app.put('/api/filters/:id', async (req, res) => {
     }
 });
 
-app.delete('/api/filters/:id', async (req, res) => {
+app.delete('/api/blacklists/:id', async (req, res) => {
     try {
         const changes = await db.deleteFilter(req.params.id);
         res.json({ changes });
@@ -68,16 +68,17 @@ async function processIncomingEmail(emailData) {
         type = 'forward';
     }
 
-    // Emit event to connected clients for voice notification
-    io.emit('new_email', {
-        type: type,
-        sender: emailData.sender || 'Unknown',
-        subject: cleanSubject
-    });
-
+    emailData.email_type = type;
     const allowed = await isEmailAllowed(emailData);
 
     if (allowed) {
+        // Emit event to connected clients for voice notification
+        io.emit('new_email', {
+            type: type,
+            sender: emailData.sender || 'Unknown',
+            subject: cleanSubject
+        });
+
         console.log('Email passed the filters. Formatting and forwarding to Telegram...');
         const message = formatMessage(emailData);
 

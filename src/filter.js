@@ -1,60 +1,75 @@
 const { getActiveFilters } = require('./db');
 
 async function isEmailAllowed(emailData) {
-    // BYPASS DARI PENGGUNA: Izinkan semua email masuk tanpa filter
-    console.log('Bypass aktif: Semua email diteruskan ke Telegram.');
-    return true;
-
     try {
-        const filters = await getActiveFilters();
-        if (filters.length === 0) {
-            console.log('No active filters found. Rejecting email by default.');
-            return false;
+        const blacklists = await getActiveFilters();
+        if (blacklists.length === 0) {
+            console.log('No active blacklists found. Allowing email.');
+            return true;
         }
 
-        const { sender, subject, text, html } = emailData;
+        const { to, cc, senderName, sender, subject, text, html, email_type } = emailData;
         const bodyStr = ((text || '') + ' ' + (html || '')).toLowerCase();
-        const senderStr = (sender || '').toLowerCase();
+        const senderEmailStr = (sender || '').toLowerCase();
+        const senderNameStr = (senderName || '').toLowerCase();
         const subjectStr = (subject || '').toLowerCase();
+        const toStr = (to || '').toLowerCase();
+        const ccStr = (cc || '').toLowerCase();
+        const typeStr = (email_type || 'new').toLowerCase();
 
-        for (const rule of filters) {
+        for (const rule of blacklists) {
             let matches = true;
 
-            // Check sender (contains)
-            if (rule.sender_contains && rule.sender_contains.trim() !== '') {
-                if (!senderStr.includes(rule.sender_contains.toLowerCase())) {
-                    matches = false;
-                }
+            if (rule.email_type && rule.email_type !== 'both') {
+                const isReplyOrForward = typeStr === 'reply' || typeStr === 'forward';
+                if (rule.email_type === 'new' && isReplyOrForward) matches = false;
+                if (rule.email_type === 'reply' && !isReplyOrForward) matches = false;
             }
 
-            // Check subject (contains)
-            if (rule.subject_contains && rule.subject_contains.trim() !== '') {
-                if (!subjectStr.includes(rule.subject_contains.toLowerCase())) {
-                    matches = false;
-                }
+            if (matches && rule.email_to && rule.email_to.trim() !== '') {
+                if (!toStr.includes(rule.email_to.toLowerCase())) matches = false;
             }
 
-            // Check body (contains)
-            if (rule.body_contains && rule.body_contains.trim() !== '') {
-                if (!bodyStr.includes(rule.body_contains.toLowerCase())) {
-                    matches = false;
-                }
+            if (matches && rule.cc && rule.cc.trim() !== '') {
+                if (!ccStr.includes(rule.cc.toLowerCase())) matches = false;
             }
 
-            // If it matches all defined conditions for this rule, we allow it.
-            // If a condition is empty (''), it's ignored (matches=true continues).
-            if (matches) {
-                console.log(`Email matched rule: [${rule.name}]`);
-                return true;
+            if (matches && rule.sender_name && rule.sender_name.trim() !== '') {
+                if (!senderNameStr.includes(rule.sender_name.toLowerCase())) matches = false;
+            }
+
+            if (matches && rule.sender_email && rule.sender_email.trim() !== '') {
+                if (!senderEmailStr.includes(rule.sender_email.toLowerCase())) matches = false;
+            }
+
+            if (matches && rule.subject && rule.subject.trim() !== '') {
+                if (!subjectStr.includes(rule.subject.toLowerCase())) matches = false;
+            }
+
+            if (matches && rule.body && rule.body.trim() !== '') {
+                if (!bodyStr.includes(rule.body.toLowerCase())) matches = false;
+            }
+
+            const hasConditions = (rule.email_to && rule.email_to.trim() !== '') ||
+                                  (rule.cc && rule.cc.trim() !== '') ||
+                                  (rule.sender_name && rule.sender_name.trim() !== '') ||
+                                  (rule.sender_email && rule.sender_email.trim() !== '') ||
+                                  (rule.subject && rule.subject.trim() !== '') ||
+                                  (rule.body && rule.body.trim() !== '') ||
+                                  (rule.email_type && rule.email_type !== 'both');
+
+            if (matches && hasConditions) {
+                console.log(`Email blocked by blacklist rule: [${rule.name}]`);
+                return false;
             }
         }
 
-        console.log('Email did not match any active filter rules.');
-        return false;
+        console.log('Email did not match any active blacklist rules. Allowing.');
+        return true;
 
     } catch (err) {
-        console.error('Error checking filters:', err);
-        return false;
+        console.error('Error checking blacklists:', err);
+        return true;
     }
 }
 
