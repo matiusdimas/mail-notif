@@ -4,7 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 
-const { initializeWA, sendWhatsAppMessage, waEvents, getWaStatus, getLatestQR } = require('./whatsapp');
+const { sendTelegramMessage } = require('./telegram');
 const { setupImapListener } = require('./imap');
 const { isEmailAllowed } = require('./filter');
 const { formatMessage } = require('./formatter');
@@ -13,28 +13,6 @@ const db = require('./db'); // Requires db to initialize and access functions
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
-io.on('connection', (socket) => {
-    socket.emit('wa_status', { ready: getWaStatus() });
-    
-    // Send cached QR if we are not ready and there is a QR code
-    const cachedQR = getLatestQR();
-    if (!getWaStatus() && cachedQR) {
-        socket.emit('wa_qr', cachedQR);
-    }
-});
-
-waEvents.on('qr', (qr) => {
-    io.emit('wa_qr', qr);
-});
-
-waEvents.on('ready', () => {
-    io.emit('wa_ready');
-});
-
-waEvents.on('disconnected', () => {
-    io.emit('wa_disconnected');
-});
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
@@ -80,7 +58,7 @@ async function processIncomingEmail(emailData) {
     console.log(`\n--- New Email Received ---`);
     console.log(`From: ${emailData.sender}`);
     console.log(`Subject: ${emailData.subject}`);
-    
+
     // Determine if it's a reply or new
     let type = 'new';
     const cleanSubject = (emailData.subject || '').trim();
@@ -96,18 +74,18 @@ async function processIncomingEmail(emailData) {
         sender: emailData.sender || 'Unknown',
         subject: cleanSubject
     });
-    
+
     const allowed = await isEmailAllowed(emailData);
-    
+
     if (allowed) {
-        console.log('Email passed the filters. Formatting and forwarding to WhatsApp...');
-        const waMessage = formatMessage(emailData);
-        
-        const success = await sendWhatsAppMessage(waMessage);
+        console.log('Email passed the filters. Formatting and forwarding to Telegram...');
+        const message = formatMessage(emailData);
+
+        const success = await sendTelegramMessage(message);
         if (success) {
-            console.log('Successfully forwarded to WhatsApp.');
+            console.log('Successfully forwarded to Telegram.');
         } else {
-            console.log('Failed to forward to WhatsApp.');
+            console.log('Failed to forward to Telegram.');
         }
     } else {
         console.log('Email ignored by filters.');
@@ -115,21 +93,16 @@ async function processIncomingEmail(emailData) {
 }
 
 async function startApp() {
-    console.log('Starting MailPulse-WA...');
-    
-    // Initialize WhatsApp Client (This will handle QR Code printing)
-    initializeWA();
-    
+    console.log('Starting MailPulse...');
+
     // Start Web Server
-    const WEB_PORT = process.env.WEB_PORT || 3000;
+    const WEB_PORT = process.env.WEB_PORT || process.env.PORT || 3000;
     server.listen(WEB_PORT, () => {
         console.log(`Web UI is running on http://localhost:${WEB_PORT}`);
     });
 
-    // Wait a bit before connecting to IMAP
-    setTimeout(() => {
-        setupImapListener(processIncomingEmail);
-    }, 2000);
+    // Start the Gmail IMAP listener
+    setupImapListener(processIncomingEmail);
 }
 
 startApp();

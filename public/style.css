@@ -82,6 +82,47 @@ body {
     border-top: 1px solid var(--glass-border);
 }
 
+.voice-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+}
+
+.voice-picker label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.voice-picker select {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 0.6rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    width: 100%;
+    cursor: pointer;
+}
+
+.voice-picker select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.voice-picker option {
+    background: #1e293b;
+    color: var(--text-primary);
+}
+
+.voice-picker .btn {
+    font-size: 0.8rem;
+    padding: 0.5rem;
+}
+
 .status-text {
     font-size: 0.8rem;
     margin-top: 0.5rem;

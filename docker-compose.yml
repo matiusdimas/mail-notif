@@ -8,8 +8,6 @@ services:
     ports:
       - "3005:3000"
     volumes:
-      # Mount .wwebjs_auth to persist WhatsApp login session
-      - ./.wwebjs_auth:/usr/src/app/.wwebjs_auth
       # Mount the database to persist filter configurations
       - ./database.sqlite:/usr/src/app/database.sqlite
     env_file:

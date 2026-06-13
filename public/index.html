@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MailPulse-WA Dashboard</title>
+    <title>MailPulse Dashboard</title>
     <script>
         // Fix Traefik sub-path routing and relative assets
         const bp = window.location.pathname.includes('/mail-wa') ? '/mail-wa/' : '/';
@@ -21,11 +21,16 @@
         <header class="header glass-panel">
             <div class="logo">
                 <span class="icon">📬</span>
-                <h1>MailPulse WA</h1>
+                <h1>MailPulse</h1>
             </div>
             <p class="subtitle">Smart Email Filter & Notifier</p>
             <div class="voice-status">
                 <button id="enable-voice-btn" class="btn primary-btn">Enable Voice Notifications</button>
+                <div class="voice-picker">
+                    <label for="voice-select">Suara</label>
+                    <select id="voice-select"></select>
+                    <button id="test-voice-btn" class="btn outline-btn" type="button">▶ Tes Suara</button>
+                </div>
                 <p id="voice-status-text" class="status-text warning">⚠️ Voice Auto-play requires interaction</p>
             </div>
         </header>
@@ -55,18 +60,6 @@
                 </div>
             </section>
         </main>
-    </div>
-
-    <!-- Modal for WhatsApp QR -->
-    <div class="modal-overlay" id="qr-modal">
-        <div class="modal glass-panel" style="text-align: center;">
-            <h2>WhatsApp Login</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Scan this QR Code using your WhatsApp app to link your account.</p>
-            <div id="qr-container" style="background: white; padding: 1rem; border-radius: 12px; display: inline-block;">
-                <img id="qr-image" src="" alt="WhatsApp QR Code" style="width: 250px; height: 250px; display: none;">
-                <div id="qr-loading" style="color: black; padding: 3rem;">Waiting for QR...</div>
-            </div>
-        </div>
     </div>
 
     <!-- Modal for Adding/Editing Filter -->

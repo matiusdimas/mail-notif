@@ -13,8 +13,77 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const enableVoiceBtn = document.getElementById('enable-voice-btn');
     const voiceStatusText = document.getElementById('voice-status-text');
+    const voiceSelect = document.getElementById('voice-select');
+    const testVoiceBtn = document.getElementById('test-voice-btn');
 
     let isVoiceEnabled = false;
+
+    // --- VOICE PICKER (TTS) ---
+    const VOICE_STORAGE_KEY = 'mailpulse_voice';
+    let availableVoices = [];
+
+    function populateVoices() {
+        const ttsSupported = 'speechSynthesis' in window;
+        availableVoices = ttsSupported ? window.speechSynthesis.getVoices() : [];
+
+        if (!availableVoices.length) {
+            voiceSelect.innerHTML = '<option value="">(Tidak ada suara terdeteksi)</option>';
+            return;
+        }
+
+        // Sort Indonesian voices first, then alphabetically
+        const sorted = [...availableVoices].sort((a, b) => {
+            const aId = a.lang.toLowerCase().startsWith('id');
+            const bId = b.lang.toLowerCase().startsWith('id');
+            if (aId !== bId) return aId ? -1 : 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        const saved = localStorage.getItem(VOICE_STORAGE_KEY);
+        voiceSelect.innerHTML = '';
+        sorted.forEach((voice) => {
+            const opt = document.createElement('option');
+            opt.value = voice.name;
+            opt.textContent = `${voice.name} (${voice.lang})`;
+            voiceSelect.appendChild(opt);
+        });
+
+        // Restore saved choice, otherwise default to the first (Indonesian) voice
+        if (saved && sorted.some(v => v.name === saved)) {
+            voiceSelect.value = saved;
+        } else {
+            voiceSelect.value = sorted[0].name;
+        }
+    }
+
+    populateVoices();
+    if ('speechSynthesis' in window) {
+        // Voices load asynchronously in most browsers
+        window.speechSynthesis.onvoiceschanged = populateVoices;
+    }
+
+    voiceSelect.addEventListener('change', () => {
+        localStorage.setItem(VOICE_STORAGE_KEY, voiceSelect.value);
+    });
+
+    // Speak text using the currently selected voice
+    function speak(text) {
+        if (!('speechSynthesis' in window)) return;
+        const utterance = new SpeechSynthesisUtterance(text);
+        const selected = availableVoices.find(v => v.name === voiceSelect.value);
+        if (selected) {
+            utterance.voice = selected;
+            utterance.lang = selected.lang;
+        } else {
+            utterance.lang = 'id-ID';
+        }
+        window.speechSynthesis.speak(utterance);
+    }
+
+    testVoiceBtn.addEventListener('click', () => {
+        window.speechSynthesis.cancel();
+        speak('Halo, ini contoh suara notifikasi email masuk.');
+    });
 
     // --- VOICE NOTIFICATIONS ---
     enableVoiceBtn.addEventListener('click', () => {
@@ -23,45 +92,13 @@ document.addEventListener('DOMContentLoaded', () => {
         enableVoiceBtn.classList.replace('primary-btn', 'outline-btn');
         enableVoiceBtn.style.color = 'var(--accent-color)';
         enableVoiceBtn.style.borderColor = 'var(--accent-color)';
-        
+
         voiceStatusText.textContent = '🔊 Voice notifications active';
         voiceStatusText.className = 'status-text success';
 
         // Play a silent test to initialize SpeechSynthesis in user context
         const testUtterance = new SpeechSynthesisUtterance('');
         window.speechSynthesis.speak(testUtterance);
-    });
-
-    // --- WHATSAPP QR CODE LOGIC ---
-    const qrModal = document.getElementById('qr-modal');
-    const qrImage = document.getElementById('qr-image');
-    const qrLoading = document.getElementById('qr-loading');
-
-    socket.on('wa_status', (data) => {
-        if (!data.ready) {
-            qrModal.classList.add('active');
-        } else {
-            qrModal.classList.remove('active');
-        }
-    });
-
-    socket.on('wa_qr', (qr) => {
-        qrModal.classList.add('active');
-        qrLoading.style.display = 'none';
-        qrImage.style.display = 'block';
-        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qr)}`;
-    });
-
-    socket.on('wa_ready', () => {
-        qrModal.classList.remove('active');
-        alert('WhatsApp Client Authenticated Successfully!');
-    });
-
-    socket.on('wa_disconnected', () => {
-        qrModal.classList.add('active');
-        qrLoading.style.display = 'block';
-        qrImage.style.display = 'none';
-        qrLoading.textContent = 'WhatsApp disconnected. Waiting for new QR...';
     });
 
     // --- INCOMING EMAIL LOGIC ---
@@ -73,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addLogItem(type, sender, subject);
 
         // Play voice
-        if (isVoiceEnabled && 'speechSynthesis' in window) {
+        if (isVoiceEnabled) {
             let message = '';
             if (type === 'reply') {
                 message = `Email balasan dari ${sender} dengan subjek ${subject}`;
@@ -83,9 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 message = `Email masuk dari ${sender} dengan subjek ${subject}`;
             }
 
-            const utterance = new SpeechSynthesisUtterance(message);
-            utterance.lang = 'id-ID'; // Indonesian voice
-            window.speechSynthesis.speak(utterance);
+            speak(message);
         }
     });
 

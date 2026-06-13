@@ -1,8 +1,8 @@
 const { getActiveFilters } = require('./db');
 
 async function isEmailAllowed(emailData) {
-    // BYPASS DARI PENGGUNA: Izinkan semua email masuk ke WA tanpa filter
-    console.log('Bypass aktif: Semua email diteruskan ke WhatsApp.');
+    // BYPASS DARI PENGGUNA: Izinkan semua email masuk tanpa filter
+    console.log('Bypass aktif: Semua email diteruskan ke Telegram.');
     return true;
 
     try {

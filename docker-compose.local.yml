@@ -1,0 +1,14 @@
+# Local testing compose — no Traefik, no external network.
+# Use this on your laptop:  docker compose -f docker-compose.local.yml up --build
+services:
+  mail-wa:
+    build: .
+    container_name: mail-wa-local
+    restart: unless-stopped
+    ports:
+      - "3005:3000"          # Web UI -> http://localhost:3005
+    volumes:
+      # Persist the SQLite filter database
+      - ./database.sqlite:/usr/src/app/database.sqlite
+    env_file:
+      - .env
