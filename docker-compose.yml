@@ -5,8 +5,9 @@ services:
     build: .
     container_name: mail-wa-app
     restart: unless-stopped
-    ports:
-      - "3005:3000"
+    # ⚠️ PENTING: Matikan ports ini (comment/hapus) agar orang tidak bisa bypass lewat http://IP-Server:3005
+    # ports:
+    #   - "3005:3000"
     volumes:
       # Mount the database to persist filter configurations
       - ./database.sqlite:/usr/src/app/database.sqlite
@@ -20,13 +21,17 @@ services:
       - "traefik.http.routers.mail-wa.rule=Host(`web-support-portal.lmd.co.id`) && PathPrefix(`/mail-wa`)"
       - "traefik.http.routers.mail-wa.entrypoints=websecure"
       - "traefik.http.routers.mail-wa.tls=true"
+
+      # 1. TAMBAHKAN MIDDLEWARE IP ALLOWLIST DI SINI
+      # (Menggunakan IP kantor yang sudah dibenarkan format CIDR-nya: 61.8.72.0/24)
+      - "traefik.http.middlewares.mailwa-ipallowlist.ipallowlist.sourcerange=61.8.72.0/24"
+
       - "traefik.http.middlewares.mailwa-strip.stripprefix.prefixes=/mail-wa"
-      # BasicAuth — scoped to THIS router only; does not affect other Traefik projects.
-      # Credentials live in .env (gitignored) as MAILWA_AUTH_USERS=user:apr1hash
-      # Generate: openssl passwd -apr1 'yourpass'  -> prefix with "user:" and DOUBLE every $ to $$
-      # e.g.  MAILWA_AUTH_USERS=admin:$$apr1$$abc$$def   (verify with: docker compose config)
       - "traefik.http.middlewares.mailwa-auth.basicauth.users=${MAILWA_AUTH_USERS}"
-      - "traefik.http.routers.mail-wa.middlewares=mailwa-strip,mailwa-auth"
+
+      # 2. UPDATE URUTAN MIDDLEWARE DI SINI (Tambahkan mailwa-ipallowlist di paling belakang)
+      - "traefik.http.routers.mail-wa.middlewares=mailwa-strip,mailwa-auth,mailwa-ipallowlist"
+
       - "traefik.http.services.mail-wa.loadbalancer.server.port=3000"
 
 networks:
